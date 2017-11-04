@@ -8,11 +8,7 @@
             }           
         </style>    
     </head>
-    <body bgcolor="gray">
-        <form enctype="multipart/form-data" action="upload.php" method="post">
-            <p><input type="file" name="image" accept="image/*">
-            <input type="submit" value="UpLoad"></p>
-        </form>    
+    <body bgcolor="gray">   
         <canvas id="caInp" width="300" height="200"></canvas>
         <canvas id="caOut" width="300" height="200"></canvas>
         <script>
@@ -35,11 +31,11 @@
                 console.log("start point: " + X + "," + Y + ", color: " + [figColor.data[0],figColor.data[1],figColor.data[2]]);
                 var pathXY = [];
                 
-				
+                
             // Replace background color with transparent
                 
                 if (figColor.data[3] != 0){ 
-			    	figColor.data[3] = 0;
+                    figColor.data[3] = 0;
                     var cMatrix = ctx.getImageData(0, 0, caInp.width, caInp.height).data;
                     //var cMat = [];
                     var ndata = 0;
@@ -48,11 +44,11 @@
                         for (xx=0; xx<=caInp.width-1; xx++){
                             var pixdata = [cMatrix[ndata], cMatrix[ndata+1], cMatrix[ndata+2],cMatrix[ndata+3]];
                             ndata = ndata+4;
-			    			
+                            
                             if (pixdata[3] != 0){
                                 if (ColorMatch(pixdata, figColor.data, 0)==true){
                                     pixdata[3] = 0;
-			    					ctx.putImageData(figColor, xx, yy);
+                                    ctx.putImageData(figColor, xx, yy);
                                 }
                             }
                                                     
