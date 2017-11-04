@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+    <head>
+    <title>canvas</title>
+    <!--script type="text/javascript" src="jcode.js"></script-->
+        <style>
+            canvas{
+                border: 0px solid blue;
+            }           
+        </style>    
+    </head>
+    <body bgcolor="gray">
+        <form enctype="multipart/form-data" action="upload.php" method="post">
+            <p><input type="file" name="image" accept="image/*">
+            <input type="submit" value="UpLoad"></p>
+        </form>    
+        <canvas id="caInp" width="300" height="200"></canvas>
+        <canvas id="caOut" width="300" height="200"></canvas>
+        <script>
+            var caInp = document.getElementById('caInp');
+            var ctx = caInp.getContext("2d");
+            var caOut = document.getElementById('caOut');
+            var ctxOut = caOut.getContext("2d");
+            pathXY = [];
+            var im = new Image();            
+            im.src = 'test1.jpg';
+            im.onload = function() {
+                ctx.drawImage(im, 0, 0);
+            }
+            
+            var figColor = [];        
+            caInp.onclick = function(event){
+                var X = Math.round(event.pageX)-caInp.offsetLeft;
+                var Y = Math.round(event.pageY)-caInp.offsetTop; 
+                var figColor = ctx.getImageData(X, Y, 1, 1);
+                console.log("start point: " + X + "," + Y + ", color: " + [figColor.data[0],figColor.data[1],figColor.data[2]]);
+                var pathXY = [];
+                
+				
+            // Replace background color with transparent
+                
+                if (figColor.data[3] != 0){ 
+			    	figColor.data[3] = 0;
+                    var cMatrix = ctx.getImageData(0, 0, caInp.width, caInp.height).data;
+                    //var cMat = [];
+                    var ndata = 0;
+                    for (yy=0;yy<=caInp.height-1;yy++){
+                        //cMat.push(0);
+                        for (xx=0; xx<=caInp.width-1; xx++){
+                            var pixdata = [cMatrix[ndata], cMatrix[ndata+1], cMatrix[ndata+2],cMatrix[ndata+3]];
+                            ndata = ndata+4;
+			    			
+                            if (pixdata[3] != 0){
+                                if (ColorMatch(pixdata, figColor.data, 0)==true){
+                                    pixdata[3] = 0;
+			    					ctx.putImageData(figColor, xx, yy);
+                                }
+                            }
+                                                    
+                        }
+                    }
+                }
+                
+                
+                
+            // Find boundary from initial point                
+                var a = 0;
+                var n = 1;
+                var getCont = false;                
+                for (n=1; n<100; n+=2){
+                    for (i=0;i<=n;i++){
+                        X = X + Math.round(Math.cos(3.14*a));
+                        Y = Y + Math.round(Math.sin(3.14*a));
+                        pixColor = ctx.getImageData(X, Y, 1, 1).data;
+                        
+                        if (ColorMatch(pixColor, figColor.data,1)==false){
+                            getCont = true; 
+                            break
+                        }
+                        ctxOut.fillRect(X, Y, 1, 1);
+                    }
+                    if (getCont == true){
+                        break
+                    }
+                    a = a+0.5;
+                }
+
+                console.log("start point on contour: " + "[" + X + "," + Y + "]");
+                console.log("--- START ---");
+                
+            // Start going along boundary path                
+                for (j=1; j<=500; j++){
+                    var patXY = [[X-1, Y-1],[X, Y-1],[X+1, Y-1],[X+1, Y],
+                                 [X+1, Y+1],[X, Y+1],[X-1, Y+1],[X-1, Y]];
+                    patXY.push(patXY[0]);        
+                    console.log("NEXT POINT " + j + ", pattern: " + patXY);                    
+
+                    for (i=0;i<8;i++){
+                        var check1 = ColorMatch(ctx.getImageData(patXY[i][0], patXY[i][1], 1, 1).data, figColor.data, 1);
+                        var check2 = ColorMatch(ctx.getImageData(patXY[i+1][0], patXY[i+1][1], 1, 1).data, figColor.data, 1); 
+                        console.log("pattern point " + i + ", check color: " + check1 + " & " + check2);
+                        if (check1 == false & check2 == true){ 
+                            X = patXY[i+1][0];
+                            Y = patXY[i+1][1];                        
+                            iterFlag = false;
+                            if (pathXY.length>1){
+                                var llastXY = pathXY[pathXY.length-2];
+                                if (patXY[i+1][0]==llastXY[0] & patXY[i+1][1]==llastXY[1]){
+                                    iterFlag = true;
+                                    console.log("!!! iteration is found !!!");
+                                }
+                            }                            
+                            if (iterFlag == false){
+                                console.log("-> selected point N" + i + ", set X,Y = " + X + "," + Y);
+                                pathXY.push(patXY[i+1]);
+                                console.log(">>> " + pathXY.length + "  points in path: last point: [" + patXY[patXY.length-1] + "]");                                
+                                //ctx.fillStyle="green";
+                                //ctx.fillRect(X, Y, 1, 1);
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (pathXY.length>1){
+                        console.log("close check: " + pathXY[pathXY.length-1] + " <> " + pathXY[0]);
+                        if (pathXY[pathXY.length-1][0] == pathXY[0][0] & pathXY[pathXY.length-1][1] == pathXY[0][1]){
+                            break;
+                        }
+                    }                                        
+                }
+                
+                
+                ctx.fillStyle="green";
+                //ctxOut.beginPath();
+                //ctxOut.moveTo(pathXY[0][0], pathXY[0][1]);
+                var str = "CONTOUR POINTS: ";
+                pathXY.forEach(function(elm, i, arr){
+                    str = str+"["+elm+"] "
+                    ctx.fillRect(elm[0], elm[1], 2, 2);    
+                    //ctxOut.lineTo(elm[0], elm[1]);    
+                                            
+                });
+                console.log(str);
+                //ctxOut.strokeStyle = "green";
+                //ctxOut.stroke();
+                
+                for (n=1;n<5;n++){
+                    pathXY.forEach(function(elm, i, arr){                 
+                        if (i>0 && i<arr.length-1){
+                            var h = fh([arr[i-1][0], arr[i][0], arr[i+1][0]], [arr[i-1][1], arr[i][1], arr[i+1][1]]);
+                            console.log(h);
+                            if (h<0.5){
+                                pathXY.splice(i,1);
+                            }
+                        }                            
+                    });    
+                }    
+                
+                ctxOut.beginPath();
+                ctxOut.moveTo(pathXY[0][0], pathXY[0][1]);                
+                ctxOut.fillStyle="black";
+                pathXY.forEach(function(elm, i, arr){
+                    ctxOut.fillRect(elm[0]-1, elm[1]-1, 3, 3);    
+                    ctxOut.lineTo(elm[0], elm[1]);
+                });                
+                ctxOut.strokeStyle = "green";
+                ctxOut.stroke();
+                //ctxOut.fill();
+            }
+            // Color match function
+            function ColorMatch(pixColor, figColor, mode){
+                if (mode == 0){
+                    var sum = 0;
+                    for(k=0;k<3;k++){
+                        sum = sum + Math.abs(pixColor[k]-figColor[k]);
+                    }
+                    if (sum>50){
+                        return false;
+                    }
+                    else{
+                        return true;
+                    }                    
+                }
+                if (mode == 1){
+                    if (pixColor[3]+figColor[3] != 0) {
+                        return false;
+                    }
+                    else{
+                        return true;
+                    }    
+                }                    
+            }
+            // Calc relative curvature of a boundary path
+            function fh(x, y){
+                var l = Math.sqrt(Math.pow((y[2]-y[0]),2)+Math.pow((x[2]-x[0]),2));
+                var si = (x[2]-x[0])/l;
+                var a = (y[1]-y[0])-(y[2]-y[0])/(x[2]-x[0])*(x[1]-x[0]);
+                return Math.abs(si*a)
+            }
+        </script>
+    </body>
+</html>
