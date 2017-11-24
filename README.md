@@ -5,4 +5,4 @@ Entire process consists of 4 stages:
 3. Find a way along object boundary comparing color of object with transparet color of background.
 4. Finaly contour consists of all pixels of object boundary. It's too much. An optimization remove unnecessary points and remain only ones lying on most curvature parts of contour.
 
-You can test this code here; http://autocontour.arybin.ru
+You can test this code here; http://arybin.ru/autocontour
